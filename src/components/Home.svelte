@@ -1,6 +1,11 @@
 <script lang="ts">
     import { Client } from "zafegard-policy-sdk";
-    import { PasskeyServer, PasskeyKit, PasskeyClient, SACClient } from "passkey-kit";
+    import {
+        PasskeyServer,
+        PasskeyKit,
+        PasskeyClient,
+        SACClient,
+    } from "passkey-kit";
     import { fundPubkey, fundSigner, fundKeypair } from "../lib/common";
     import { onMount } from "svelte";
     import {
@@ -63,7 +68,7 @@
                 contractId,
                 rpcUrl: import.meta.env.PUBLIC_RPC_URL,
                 networkPassphrase: import.meta.env.PUBLIC_PASSPHRASE,
-            })
+            });
 
             contractId_ = contractId;
 
@@ -74,15 +79,19 @@
                 const keypair = Keypair.fromSecret(secret);
                 const pubkey = keypair.publicKey();
 
-                const test = await pk_wallet.rpc.getContractData(zafeguardPolicy, xdr.ScVal.scvBytes(keypair.rawPublicKey()));
+                const test = await pk_wallet.rpc.getContractData(
+                    zafeguardPolicy,
+                    xdr.ScVal.scvBytes(keypair.rawPublicKey()),
+                );
 
-                const [interval_scval, amount_scval] = test.val.contractData().val().vec() as [xdr.ScVal, xdr.ScVal]
-                const interval = interval_scval.u32()
-                const amount = Number(amount_scval.i128().lo().toBigInt())
+                const [interval_scval, amount_scval] = test.val
+                    .contractData()
+                    .val()
+                    .vec() as [xdr.ScVal, xdr.ScVal];
+                const interval = interval_scval.u32();
+                const amount = Number(amount_scval.i128().lo().toBigInt());
 
-                subwallets = new Map([
-                    [pubkey, [secret, interval, amount]]
-                ]);
+                subwallets = new Map([[pubkey, [secret, interval, amount]]]);
             }
         } else if (localStorage.hasOwnProperty("zg:subwallets")) {
             localStorage.removeItem("zg:subwallets");
@@ -243,16 +252,6 @@
 
         await setBalance();
     }
-    async function setBalance() {
-        balance_ = await native
-            .balance({
-                id: contractId_,
-            })
-            .then(({ result }) => result)
-            .catch(() => BigInt(0));
-
-        console.log(balance_);
-    }
 
     async function addSubWallet() {
         try {
@@ -363,23 +362,33 @@
             loading = loading;
         }
     }
-    async function spendSubWallet(secret: string, interval: number, amount: number) {
+    async function spendSubWallet(
+        secret: string,
+        interval: number,
+        amount: number,
+    ) {
         const keypair = Keypair.fromSecret(secret);
         const pubkey = keypair.publicKey();
-        
+
         try {
             loading.set(`spend_${pubkey}`, true);
             loading = loading;
 
             try {
-                const previous = await pk_wallet.rpc.getContractData(zafeguardPolicy, xdr.ScVal.scvVec([
-                    xdr.ScVal.scvSymbol("Previous"),
-                    xdr.ScVal.scvBytes(keypair.rawPublicKey())
-                ])).then(({ val }) => val.contractData().val().u32());
+                const previous = await pk_wallet.rpc
+                    .getContractData(
+                        zafeguardPolicy,
+                        xdr.ScVal.scvVec([
+                            xdr.ScVal.scvSymbol("Previous"),
+                            xdr.ScVal.scvBytes(keypair.rawPublicKey()),
+                        ]),
+                    )
+                    .then(({ val }) => val.contractData().val().u32());
 
-                const { sequence: current } = await pk_wallet.rpc.getLatestLedger();
+                const { sequence: current } =
+                    await pk_wallet.rpc.getLatestLedger();
 
-                amount = amount * Math.floor((current - previous) / interval)
+                amount = amount * Math.floor((current - previous) / interval);
             } catch {}
 
             if (!amount) {
@@ -419,12 +428,8 @@
                     xdr.ContractIdPreimage.contractIdPreimageFromAddress(
                         new xdr.ContractIdPreimageFromAddress({
                             address:
-                                Address.fromString(
-                                    fundPubkey,
-                                ).toScAddress(),
-                            salt: Address.fromString(
-                                contractId_,
-                            ).toBuffer(),
+                                Address.fromString(fundPubkey).toScAddress(),
+                            salt: Address.fromString(contractId_).toBuffer(),
                         }),
                     ),
             }),
@@ -433,6 +438,16 @@
         zafeguardPolicy = Address.fromString(
             StrKey.encodeContract(hash(contractPreimage.toXDR())),
         ).toString();
+    }
+    async function setBalance() {
+        balance_ = await native
+            .balance({
+                id: contractId_,
+            })
+            .then(({ result }) => result)
+            .catch(() => BigInt(0));
+
+        console.log(balance_);
     }
     function setSubWallets() {
         subwallets = new Map(
@@ -474,8 +489,7 @@
                 <th>Address</th>
                 <th>Secret</th>
                 <th>Amount</th>
-                <th>Interval</th>
-                <th></th>
+                <th colspan="3">Interval</th>
             </tr>
         </thead>
         <tbody class="[&>tr>td]:px-2 [&>tr>td]:py-1">
@@ -483,20 +497,14 @@
                 <tr class="odd:bg-slate-100">
                     <td>{compactAddress(pubkey)}</td>
                     <td>{compactAddress(secret)}</td>
-                    <td> {parseInt(amount.toString()).toLocaleString()} (stroops) </td>
-                    <td> {parseInt(interval.toString()).toLocaleString()} (ledgers) </td>
+                    <td>
+                        {parseInt(amount.toString()).toLocaleString()} (stroops)
+                    </td>
+                    <td>
+                        {parseInt(interval.toString()).toLocaleString()} (ledgers)
+                    </td>
                     <td>
                         {#if keyId_}
-                            <button
-                                class="bg-red-500 text-white px-2 py-1 rounded"
-                                on:click={() => removeSubWallet(pubkey)}
-                            >
-                                {#if loading.get(`remove_${pubkey}`)}
-                                    ...
-                                {:else}
-                                    –
-                                {/if}
-                            </button>
                             <button
                                 class="bg-purple-500 text-white px-2 py-1 rounded"
                                 on:click={() => updateSubWallet(secret, pubkey)}
@@ -511,7 +519,8 @@
 
                         <button
                             class="bg-blue-500 text-white px-2 py-1 rounded"
-                            on:click={() => spendSubWallet(secret, interval, amount)}
+                            on:click={() =>
+                                spendSubWallet(secret, interval, amount)}
                         >
                             {#if loading.get(`spend_${pubkey}`)}
                                 ...
@@ -521,17 +530,34 @@
                         </button>
                         <a
                             class="bg-black text-white px-2 py-1 rounded inline-block"
-                            href={location.origin + `?contractId=${contractId_}&secret=${secret}`} target="_blank" rel="nofollow"
+                            href={location.origin +
+                                `?contractId=${contractId_}&secret=${secret}`}
+                            target="_blank"
+                            rel="nofollow"
                         >
                             Share
                         </a>
                     </td>
+                    {#if keyId_}
+                        <td>
+                            <button
+                                class="bg-red-500 text-white px-2 py-1 rounded"
+                                on:click={() => removeSubWallet(pubkey)}
+                            >
+                                {#if loading.get(`remove_${pubkey}`)}
+                                    ...
+                                {:else}
+                                    –
+                                {/if}
+                            </button>
+                        </td>
+                    {/if}
                 </tr>
             {/each}
-           
+
             {#if keyId_ && balance_}
                 <tr class="bg-slate-300">
-                    <td colspan="4"> Add new sub wallet </td>
+                    <td colspan="5"> Add new sub wallet </td>
                     <td>
                         <button
                             class="bg-green-500 text-white px-2 py-1 rounded"
@@ -544,6 +570,12 @@
                             {/if}
                         </button>
                     </td>
+                </tr>
+            {/if}
+
+            {#if contractId_ && !balance_}
+                <tr class="bg-slate-300">
+                    <td colspan="5"> Setting things up... </td>
                 </tr>
             {/if}
         </tbody>
