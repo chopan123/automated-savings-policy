@@ -6,14 +6,23 @@ extern crate std;
 use smart_wallet::Contract as SmartWalletContract;
 use smart_wallet_interface::types::SignerKey;
 use soroban_sdk::{
-    auth::{Context, ContractContext}, symbol_short, testutils::{Address as _, Ledger as _}, vec, xdr::ToXdr, Address, BytesN, Env, Error as SorobanError, TryIntoVal
+    auth::{Context, ContractContext},
+    symbol_short,
+    testutils::{Address as _, EnvTestConfig, Ledger as _},
+    vec,
+    xdr::ToXdr,
+    Address, BytesN, Env, Error as SorobanError, TryIntoVal,
 };
 
 use crate::{Contract, ContractClient, Error};
 
 #[test]
 fn test_add_and_use() {
-    let env = Env::default();
+    let mut env = Env::default();
+
+    env.set_config(EnvTestConfig {
+        capture_snapshot_at_drop: false,
+    });
 
     env.ledger().set_sequence_number(10);
 
@@ -61,7 +70,11 @@ fn test_add_and_use() {
 
 #[test]
 fn test_add_and_remove() {
-    let env = Env::default();
+    let mut env = Env::default();
+
+    env.set_config(EnvTestConfig {
+        capture_snapshot_at_drop: false,
+    });
 
     env.ledger().set_sequence_number(10);
 

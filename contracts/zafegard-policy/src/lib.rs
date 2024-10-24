@@ -45,15 +45,9 @@ impl Contract {
 
         env.storage().instance().set(&StorageKey::Admin, &admin);
     }
-    pub fn add_wallet(
-        env: Env,
-        user: BytesN<32>,
-        sac: Address,
-        interval: u32,
-        amount: i128,
-    ) {
+    pub fn add_wallet(env: Env, user: BytesN<32>, sac: Address, interval: u32, amount: i128) {
         let admin = self::get_admin_address(&env);
-        
+
         admin.require_auth();
 
         SmartWalletClient::new(&env, &admin).add_signer(&Signer::Ed25519(
@@ -69,14 +63,14 @@ impl Contract {
                     ])
                 )
             ]),
-            SignerStorage::Temporary,
+            SignerStorage::Persistent,
         ));
 
         env.storage().persistent().set(&user, &(interval, amount));
     }
     pub fn remove_wallet(env: Env, user: BytesN<32>) {
         let admin = self::get_admin_address(&env);
-        
+
         admin.require_auth();
 
         SmartWalletClient::new(&env, &admin).remove_signer(&SignerKey::Ed25519(user.clone()));
@@ -120,35 +114,37 @@ impl PolicyInterface for Contract {
                                         .storage()
                                         .persistent()
                                         .get::<BytesN<32>, (u32, i128)>(&user.clone())
-                                        .unwrap_or_else(|| panic_with_error!(&env, Error::NotFound));
-    
+                                        .unwrap_or_else(|| {
+                                            panic_with_error!(&env, Error::NotFound)
+                                        });
+
                                     let current = env.ledger().sequence();
                                     let previous = env
                                         .storage()
                                         .persistent()
                                         .get::<StorageKey, u32>(&StorageKey::Previous(user.clone()))
                                         .unwrap_or(env.ledger().sequence() - interval);
-    
+
                                     let x = (current - previous) / interval;
-    
+
                                     if x <= 0 {
                                         panic_with_error!(&env, Error::TooSoon)
                                     }
-    
+
                                     if arg_amount > (amount * i128::from(x)) {
                                         panic_with_error!(&env, Error::TooMuch)
                                     }
-    
+
                                     env.storage()
                                         .persistent()
                                         .set(&StorageKey::Previous(user.clone()), &current);
-    
+
                                     return;
                                 }
                             }
-                        }   
+                        }
                     }
-                }   
+                }
             }
         }
 
