@@ -57,12 +57,30 @@
         const secret = url.searchParams.get("secret") || undefined;
 
         if (keyId) {
+            setSubWallets();
             await connectWallet(keyId).then(async () => {
                 await initWallet();
                 await fundWallet();
             });
-            setSubWallets();
-        } else if (contractId) {
+        } 
+        
+        else if (contractId && secret) {
+            contractId_ = contractId;
+
+            setZafeGuardPolicy();
+
+            const keypair = Keypair.fromSecret(secret);
+            const pubkey = keypair.publicKey();
+
+            const [interval_scval, amount_scval] = await pk_wallet.rpc.getContractData(
+                zafeguardPolicy,
+                xdr.ScVal.scvBytes(keypair.rawPublicKey()),
+            ).then(({ val }) => val.contractData().val().vec() as [xdr.ScVal, xdr.ScVal]);
+            const interval = interval_scval.u32();
+            const amount = Number(amount_scval.i128().lo().toBigInt());
+
+            subwallets = new Map([[pubkey, [secret, interval, amount]]]);
+
             // will be missing keyId_ but that's fine, just won't be able to sign with a passkey
             pk_wallet.wallet = new PasskeyClient({
                 contractId,
@@ -70,30 +88,10 @@
                 networkPassphrase: import.meta.env.PUBLIC_PASSPHRASE,
             });
 
-            contractId_ = contractId;
-
-            setZafeGuardPolicy();
             await fundWallet();
-
-            if (secret) {
-                const keypair = Keypair.fromSecret(secret);
-                const pubkey = keypair.publicKey();
-
-                const test = await pk_wallet.rpc.getContractData(
-                    zafeguardPolicy,
-                    xdr.ScVal.scvBytes(keypair.rawPublicKey()),
-                );
-
-                const [interval_scval, amount_scval] = test.val
-                    .contractData()
-                    .val()
-                    .vec() as [xdr.ScVal, xdr.ScVal];
-                const interval = interval_scval.u32();
-                const amount = Number(amount_scval.i128().lo().toBigInt());
-
-                subwallets = new Map([[pubkey, [secret, interval, amount]]]);
-            }
-        } else if (localStorage.hasOwnProperty("zg:subwallets")) {
+        } 
+        
+        else if (localStorage.hasOwnProperty("zg:subwallets")) {
             localStorage.removeItem("zg:subwallets");
         }
     });
@@ -539,7 +537,7 @@
                         </a>
                     </td>
                     {#if keyId_}
-                        <td>
+                        <td class="text-right">
                             <button
                                 class="bg-red-500 text-white px-2 py-1 rounded"
                                 on:click={() => removeSubWallet(pubkey)}
@@ -558,7 +556,7 @@
             {#if keyId_ && balance_}
                 <tr class="bg-slate-300">
                     <td colspan="5"> Add new sub wallet </td>
-                    <td>
+                    <td class="text-right">
                         <button
                             class="bg-green-500 text-white px-2 py-1 rounded"
                             on:click={addSubWallet}
@@ -573,9 +571,9 @@
                 </tr>
             {/if}
 
-            {#if contractId_ && !balance_}
+            {#if !balance_}
                 <tr class="bg-slate-300">
-                    <td colspan="5"> Setting things up... </td>
+                    <td colspan="6"> Setting things up... </td>
                 </tr>
             {/if}
         </tbody>
