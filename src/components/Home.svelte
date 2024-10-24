@@ -464,6 +464,7 @@
     function signOut() {
         keyId_ = "";
         contractId_ = "";
+        localStorage.removeItem("zg:fundsecret");
         localStorage.removeItem("zg:subwallets");
         location.assign(location.origin);
     }

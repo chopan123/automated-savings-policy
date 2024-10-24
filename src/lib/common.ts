@@ -13,12 +13,14 @@ export const fundKeypair = new Promise<Keypair>(async (resolve) => {
 
     const nowData = new TextEncoder().encode(now.getTime().toString());
     const hashBuffer = await crypto.subtle.digest('SHA-256', nowData);
-    const keypair = Keypair.fromRawEd25519Seed(Buffer.from(hashBuffer))
+    const keypair = localStorage.hasOwnProperty('zg:fundsecret') ? Keypair.fromSecret(localStorage.getItem('zg:fundsecret')!) : Keypair.fromRawEd25519Seed(Buffer.from(hashBuffer))
     const publicKey = keypair.publicKey()
 
     await rpc.getAccount(publicKey)
         .catch(() => rpc.requestAirdrop(publicKey))
         .catch(() => { })
+
+    localStorage.setItem('zg:fundsecret', keypair.secret())
 
     resolve(keypair)
 })
