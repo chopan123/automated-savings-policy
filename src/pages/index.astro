@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Home from '../components/Home.svelte';
+---
+
+<Layout title="Zafegard">
+	<main class="p-2">
+		<Home client:only="svelte" />
+	</main>
+</Layout>
