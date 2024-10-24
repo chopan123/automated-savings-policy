@@ -62,9 +62,7 @@
                 await initWallet();
                 await fundWallet();
             });
-        } 
-        
-        else if (contractId && secret) {
+        } else if (contractId && secret) {
             contractId_ = contractId;
 
             setZafeGuardPolicy();
@@ -72,10 +70,18 @@
             const keypair = Keypair.fromSecret(secret);
             const pubkey = keypair.publicKey();
 
-            const [interval_scval, amount_scval] = await pk_wallet.rpc.getContractData(
-                zafeguardPolicy,
-                xdr.ScVal.scvBytes(keypair.rawPublicKey()),
-            ).then(({ val }) => val.contractData().val().vec() as [xdr.ScVal, xdr.ScVal]);
+            const [interval_scval, amount_scval] = await pk_wallet.rpc
+                .getContractData(
+                    zafeguardPolicy,
+                    xdr.ScVal.scvBytes(keypair.rawPublicKey()),
+                )
+                .then(
+                    ({ val }) =>
+                        val.contractData().val().vec() as [
+                            xdr.ScVal,
+                            xdr.ScVal,
+                        ],
+                );
             const interval = interval_scval.u32();
             const amount = Number(amount_scval.i128().lo().toBigInt());
 
@@ -89,9 +95,7 @@
             });
 
             await fundWallet();
-        } 
-        
-        else if (localStorage.hasOwnProperty("zg:subwallets")) {
+        } else if (localStorage.hasOwnProperty("zg:subwallets")) {
             localStorage.removeItem("zg:subwallets");
         }
     });
@@ -555,7 +559,7 @@
 
             {#if keyId_ && balance_}
                 <tr class="bg-slate-300">
-                    <td colspan="5"> Add new sub wallet </td>
+                    <td colspan="5">Add new sub wallet</td>
                     <td class="text-right">
                         <button
                             class="bg-green-500 text-white px-2 py-1 rounded"
@@ -573,7 +577,7 @@
 
             {#if !balance_}
                 <tr class="bg-slate-300">
-                    <td colspan="6"> Setting things up... </td>
+                    <td colspan="6">Setting things up...</td>
                 </tr>
             {/if}
         </tbody>
