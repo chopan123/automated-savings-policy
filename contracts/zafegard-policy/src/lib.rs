@@ -105,42 +105,40 @@ impl PolicyInterface for Contract {
     fn policy__(env: Env, _source: Address, signer: SignerKey, contexts: Vec<Context>) {
         if contexts.len() == 1 {
             if let SignerKey::Ed25519(user) = signer {
-                for context in contexts.iter() {
-                    if let Context::Contract(ContractContext { fn_name, args, .. }) = context {
-                        if fn_name == symbol_short!("transfer") {
-                            if let Some(amount_val) = args.get(2) {
-                                if let Ok(arg_amount) = i128::try_from_val(&env, &amount_val) {
-                                    let (interval, amount) = env
-                                        .storage()
-                                        .persistent()
-                                        .get::<BytesN<32>, (u32, i128)>(&user.clone())
-                                        .unwrap_or_else(|| {
-                                            panic_with_error!(&env, Error::NotFound)
-                                        });
+                if let Context::Contract(ContractContext { fn_name, args, .. }) = contexts.get_unchecked(0) {
+                    if fn_name == symbol_short!("transfer") {
+                        if let Some(amount_val) = args.get(2) {
+                            if let Ok(arg_amount) = i128::try_from_val(&env, &amount_val) {
+                                let (interval, amount) = env
+                                    .storage()
+                                    .persistent()
+                                    .get::<BytesN<32>, (u32, i128)>(&user.clone())
+                                    .unwrap_or_else(|| {
+                                        panic_with_error!(&env, Error::NotFound)
+                                    });
 
-                                    let current = env.ledger().sequence();
-                                    let previous = env
-                                        .storage()
-                                        .persistent()
-                                        .get::<StorageKey, u32>(&StorageKey::Previous(user.clone()))
-                                        .unwrap_or(env.ledger().sequence() - interval);
+                                let current = env.ledger().sequence();
+                                let previous = env
+                                    .storage()
+                                    .persistent()
+                                    .get::<StorageKey, u32>(&StorageKey::Previous(user.clone()))
+                                    .unwrap_or(env.ledger().sequence() - interval);
 
-                                    let x = (current - previous) / interval;
+                                let x = (current - previous) / interval;
 
-                                    if x <= 0 {
-                                        panic_with_error!(&env, Error::TooSoon)
-                                    }
-
-                                    if arg_amount > (amount * i128::from(x)) {
-                                        panic_with_error!(&env, Error::TooMuch)
-                                    }
-
-                                    env.storage()
-                                        .persistent()
-                                        .set(&StorageKey::Previous(user.clone()), &current);
-
-                                    return;
+                                if x <= 0 {
+                                    panic_with_error!(&env, Error::TooSoon)
                                 }
+
+                                if arg_amount > (amount * i128::from(x)) {
+                                    panic_with_error!(&env, Error::TooMuch)
+                                }
+
+                                env.storage()
+                                    .persistent()
+                                    .set(&StorageKey::Previous(user.clone()), &current);
+
+                                return;
                             }
                         }
                     }
