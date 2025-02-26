@@ -5,9 +5,9 @@ resolver = "2"
 members = ["zafegard-policy"]
 
 [workspace.dependencies]
-soroban-sdk = { version = "21.7.5" }
-smart-wallet = { git = "https://github.com/kalepail/passkey-kit", branch = "next-dima" }
-smart-wallet-interface = { git = "https://github.com/kalepail/passkey-kit", branch = "next-dima" }
+soroban-sdk = "22.0.0-rc.3.2"
+smart-wallet = { git = "https://github.com/kalepail/passkey-kit", branch = "next" }
+smart-wallet-interface = { git = "https://github.com/kalepail/passkey-kit", branch = "next" }
 
 [profile.release]
 opt-level = "z"

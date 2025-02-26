@@ -4,12 +4,6 @@ if (typeof window !== 'undefined') {
     //@ts-ignore Buffer exists
     window.Buffer = window.Buffer || Buffer;
 }
-export const networks = {
-    testnet: {
-        networkPassphrase: "Test SDF Network ; September 2015",
-        contractId: "NIL",
-    }
-};
 export const Errors = {
     1: { message: "AlreadyInitialized" },
     2: { message: "NotInitialized" },
@@ -20,6 +14,11 @@ export const Errors = {
 };
 export class Client extends ContractClient {
     options;
+    static async deploy(
+    /** Options for initalizing a Client as well as for calling a method, with extras specific to deploying. */
+    options) {
+        return ContractClient.deploy(null, options);
+    }
     constructor(options) {
         super(new ContractSpec(["AAAAAgAAAAAAAAAAAAAACVNpZ25lcktleQAAAAAAAAMAAAABAAAAAAAAAAZQb2xpY3kAAAAAAAEAAAATAAAAAQAAAAAAAAAHRWQyNTUxOQAAAAABAAAD7gAAACAAAAABAAAAAAAAAAlTZWNwMjU2cjEAAAAAAAABAAAADg==",
             "AAAAAgAAAAAAAAAAAAAAClN0b3JhZ2VLZXkAAAAAAAIAAAAAAAAAAAAAAAVBZG1pbgAAAAAAAAEAAAAAAAAACFByZXZpb3VzAAAAAQAAA+4AAAAg",
@@ -28,7 +27,8 @@ export class Client extends ContractClient {
             "AAAAAAAAAAAAAAAKYWRkX3dhbGxldAAAAAAABAAAAAAAAAAEdXNlcgAAA+4AAAAgAAAAAAAAAANzYWMAAAAAEwAAAAAAAAAIaW50ZXJ2YWwAAAAEAAAAAAAAAAZhbW91bnQAAAAAAAsAAAAA",
             "AAAAAAAAAAAAAAANcmVtb3ZlX3dhbGxldAAAAAAAAAEAAAAAAAAABHVzZXIAAAPuAAAAIAAAAAA=",
             "AAAAAAAAAAAAAAANdXBkYXRlX3dhbGxldAAAAAAAAAMAAAAAAAAABHVzZXIAAAPuAAAAIAAAAAAAAAAIaW50ZXJ2YWwAAAPoAAAABAAAAAAAAAAGYW1vdW50AAAAAAPoAAAACwAAAAA=",
-            "AAAAAAAAAAAAAAAIcG9saWN5X18AAAADAAAAAAAAAAdfc291cmNlAAAAABMAAAAAAAAABnNpZ25lcgAAAAAH0AAAAAlTaWduZXJLZXkAAAAAAAAAAAAACGNvbnRleHRzAAAD6gAAB9AAAAAHQ29udGV4dAAAAAAA"]), options);
+            "AAAAAAAAAAAAAAAIcG9saWN5X18AAAADAAAAAAAAAAdfc291cmNlAAAAABMAAAAAAAAABnNpZ25lcgAAAAAH0AAAAAlTaWduZXJLZXkAAAAAAAAAAAAACGNvbnRleHRzAAAD6gAAB9AAAAAHQ29udGV4dAAAAAAA",
+            "AAAAAQAAAAAAAAAAAAAAEFNpZ25lckV4cGlyYXRpb24AAAABAAAAAAAAAAEwAAAAAAAD6AAAAAQ="]), options);
         this.options = options;
     }
     fromJSON = {
@@ -36,5 +36,6 @@ export class Client extends ContractClient {
         add_wallet: (this.txFromJSON),
         remove_wallet: (this.txFromJSON),
         update_wallet: (this.txFromJSON),
+        policy__: (this.txFromJSON)
     };
 }

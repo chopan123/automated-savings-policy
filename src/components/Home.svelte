@@ -15,10 +15,10 @@
         Operation,
         TransactionBuilder,
         Address,
-        SorobanRpc,
         StrKey,
         hash,
-    } from "@stellar/stellar-sdk-legacy";
+    } from "@stellar/stellar-sdk/minimal";
+    import { Api, Server } from "@stellar/stellar-sdk/minimal/rpc";
 
     const pk_server = new PasskeyServer({
         rpcUrl: import.meta.env.PUBLIC_RPC_URL,
@@ -29,7 +29,7 @@
     const pk_wallet = new PasskeyKit({
         rpcUrl: import.meta.env.PUBLIC_RPC_URL,
         networkPassphrase: import.meta.env.PUBLIC_PASSPHRASE,
-        factoryContractId: import.meta.env.PUBLIC_FACTORY,
+        walletWasmHash: import.meta.env.PUBLIC_WALLET_WASM_HASH,
     });
 
     const sac = new SACClient({
@@ -105,12 +105,12 @@
             loading.set("createWallet", true);
             loading = loading;
 
-            const { keyId_base64, contractId, built } =
+            const { keyIdBase64, contractId, signedTx } =
                 await pk_wallet.createWallet("Zafegard", "Zafegard Admin");
 
-            keyId_ = keyId_base64;
+            keyId_ = keyIdBase64;
 
-            const res = await pk_server.send(built);
+            const res = await pk_server.send(signedTx);
 
             console.log(res);
 
@@ -127,11 +127,11 @@
         }
     }
     async function connectWallet(keyId: string) {
-        const { keyId_base64, contractId } = await pk_wallet.connectWallet({
+        const { keyIdBase64, contractId } = await pk_wallet.connectWallet({
             keyId,
         });
 
-        keyId_ = keyId_base64;
+        keyId_ = keyIdBase64;
 
         if (!keyId) {
             url.searchParams.set("keyId", keyId_);
@@ -142,7 +142,7 @@
     }
     async function initWallet() {
         try {
-            const rpc = new SorobanRpc.Server(import.meta.env.PUBLIC_RPC_URL);
+            const rpc = new Server(import.meta.env.PUBLIC_RPC_URL);
             const source = await rpc.getAccount(fundPubkey);
             const transaction_before = new TransactionBuilder(source, {
                 fee: "0",
@@ -163,7 +163,7 @@
 
             const sim = await rpc.simulateTransaction(transaction_before);
 
-            if (!SorobanRpc.Api.isSimulationSuccess(sim))
+            if (!Api.isSimulationSuccess(sim))
                 throw new Error("Simulation failed");
 
             const transaction_after = TransactionBuilder.cloneFrom(

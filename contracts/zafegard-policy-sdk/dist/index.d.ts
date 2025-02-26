@@ -1,12 +1,6 @@
 import { Buffer } from "buffer";
-import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions } from '@stellar/stellar-sdk/minimal/contract';
+import { AssembledTransaction, Client as ContractClient, ClientOptions as ContractClientOptions, MethodOptions } from '@stellar/stellar-sdk/minimal/contract';
 import type { u32, i128, Option } from '@stellar/stellar-sdk/minimal/contract';
-export declare const networks: {
-    readonly testnet: {
-        readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "NIL";
-    };
-};
 export type SignerKey = {
     tag: "Policy";
     values: readonly [string];
@@ -44,6 +38,7 @@ export declare const Errors: {
         message: string;
     };
 };
+export type SignerExpiration = readonly [Option<u32>];
 export interface Client {
     /**
      * Construct and simulate a init transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -129,11 +124,22 @@ export interface Client {
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
+    static deploy<T = Client>(
+    /** Options for initalizing a Client as well as for calling a method, with extras specific to deploying. */
+    options: MethodOptions & Omit<ContractClientOptions, "contractId"> & {
+        /** The hash of the Wasm blob, which must already be installed on-chain. */
+        wasmHash: Buffer | string;
+        /** Salt used to generate the contract's ID. Passed through to {@link Operation.createCustomContract}. Default: random. */
+        salt?: Buffer | Uint8Array;
+        /** The format used to decode `wasmHash`, if it's provided as a string. */
+        format?: "hex" | "base64";
+    }): Promise<AssembledTransaction<T>>;
     constructor(options: ContractClientOptions);
     readonly fromJSON: {
         init: (json: string) => AssembledTransaction<null>;
         add_wallet: (json: string) => AssembledTransaction<null>;
         remove_wallet: (json: string) => AssembledTransaction<null>;
         update_wallet: (json: string) => AssembledTransaction<null>;
+        policy__: (json: string) => AssembledTransaction<null>;
     };
 }

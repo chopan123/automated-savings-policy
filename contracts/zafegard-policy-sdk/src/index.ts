@@ -3,21 +3,13 @@ import {
   AssembledTransaction,
   Client as ContractClient,
   ClientOptions as ContractClientOptions,
-  Result,
+  MethodOptions,
   Spec as ContractSpec,
 } from '@stellar/stellar-sdk/minimal/contract';
 import type {
   u32,
-  i32,
-  u64,
-  i64,
-  u128,
   i128,
-  u256,
-  i256,
   Option,
-  Typepoint,
-  Duration,
 } from '@stellar/stellar-sdk/minimal/contract';
 
 if (typeof window !== 'undefined') {
@@ -25,30 +17,17 @@ if (typeof window !== 'undefined') {
   window.Buffer = window.Buffer || Buffer;
 }
 
-export const networks = {
-  testnet: {
-    networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "NIL",
-  }
-} as const
-
 export type SignerKey = { tag: "Policy", values: readonly [string] } | { tag: "Ed25519", values: readonly [Buffer] } | { tag: "Secp256r1", values: readonly [Buffer] };
-
 export type StorageKey = { tag: "Admin", values: void } | { tag: "Previous", values: readonly [Buffer] };
-
 export const Errors = {
   1: { message: "AlreadyInitialized" },
-
   2: { message: "NotInitialized" },
-
   3: { message: "NotFound" },
-
   4: { message: "NotAllowed" },
-
   5: { message: "TooSoon" },
-
   6: { message: "TooMuch" }
 }
+export type SignerExpiration = readonly [Option<u32>];
 
 export interface Client {
   /**
@@ -132,6 +111,20 @@ export interface Client {
   }) => Promise<AssembledTransaction<null>>
 }
 export class Client extends ContractClient {
+  static async deploy<T = Client>(
+    /** Options for initalizing a Client as well as for calling a method, with extras specific to deploying. */
+    options: MethodOptions &
+      Omit<ContractClientOptions, "contractId"> & {
+        /** The hash of the Wasm blob, which must already be installed on-chain. */
+        wasmHash: Buffer | string;
+        /** Salt used to generate the contract's ID. Passed through to {@link Operation.createCustomContract}. Default: random. */
+        salt?: Buffer | Uint8Array;
+        /** The format used to decode `wasmHash`, if it's provided as a string. */
+        format?: "hex" | "base64";
+      }
+  ): Promise<AssembledTransaction<T>> {
+    return ContractClient.deploy(null, options)
+  }
   constructor(public readonly options: ContractClientOptions) {
     super(
       new ContractSpec(["AAAAAgAAAAAAAAAAAAAACVNpZ25lcktleQAAAAAAAAMAAAABAAAAAAAAAAZQb2xpY3kAAAAAAAEAAAATAAAAAQAAAAAAAAAHRWQyNTUxOQAAAAABAAAD7gAAACAAAAABAAAAAAAAAAlTZWNwMjU2cjEAAAAAAAABAAAADg==",
@@ -141,7 +134,8 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAAKYWRkX3dhbGxldAAAAAAABAAAAAAAAAAEdXNlcgAAA+4AAAAgAAAAAAAAAANzYWMAAAAAEwAAAAAAAAAIaW50ZXJ2YWwAAAAEAAAAAAAAAAZhbW91bnQAAAAAAAsAAAAA",
         "AAAAAAAAAAAAAAANcmVtb3ZlX3dhbGxldAAAAAAAAAEAAAAAAAAABHVzZXIAAAPuAAAAIAAAAAA=",
         "AAAAAAAAAAAAAAANdXBkYXRlX3dhbGxldAAAAAAAAAMAAAAAAAAABHVzZXIAAAPuAAAAIAAAAAAAAAAIaW50ZXJ2YWwAAAPoAAAABAAAAAAAAAAGYW1vdW50AAAAAAPoAAAACwAAAAA=",
-        "AAAAAAAAAAAAAAAIcG9saWN5X18AAAADAAAAAAAAAAdfc291cmNlAAAAABMAAAAAAAAABnNpZ25lcgAAAAAH0AAAAAlTaWduZXJLZXkAAAAAAAAAAAAACGNvbnRleHRzAAAD6gAAB9AAAAAHQ29udGV4dAAAAAAA"]),
+        "AAAAAAAAAAAAAAAIcG9saWN5X18AAAADAAAAAAAAAAdfc291cmNlAAAAABMAAAAAAAAABnNpZ25lcgAAAAAH0AAAAAlTaWduZXJLZXkAAAAAAAAAAAAACGNvbnRleHRzAAAD6gAAB9AAAAAHQ29udGV4dAAAAAAA",
+        "AAAAAQAAAAAAAAAAAAAAEFNpZ25lckV4cGlyYXRpb24AAAABAAAAAAAAAAEwAAAAAAAD6AAAAAQ="]),
       options
     )
   }
@@ -150,5 +144,6 @@ export class Client extends ContractClient {
     add_wallet: this.txFromJSON<null>,
     remove_wallet: this.txFromJSON<null>,
     update_wallet: this.txFromJSON<null>,
+    policy__: this.txFromJSON<null>
   }
 }

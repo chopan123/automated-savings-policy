@@ -1,7 +1,7 @@
 #![no_std]
 
 use smart_wallet_interface::{
-    types::{Signer, SignerKey, SignerLimits, SignerStorage},
+    types::{Signer, SignerExpiration, SignerKey, SignerLimits, SignerStorage},
     PolicyInterface, SmartWalletClient,
 };
 use soroban_sdk::{
@@ -52,8 +52,8 @@ impl Contract {
 
         SmartWalletClient::new(&env, &admin).add_signer(&Signer::Ed25519(
             user.clone(),
-            None,
-            SignerLimits(map![
+            SignerExpiration(None),
+            SignerLimits(Some(map![
                 &env,
                 (
                     sac,
@@ -62,7 +62,7 @@ impl Contract {
                         SignerKey::Policy(env.current_contract_address())
                     ])
                 )
-            ]),
+            ])),
             SignerStorage::Persistent,
         ));
 
