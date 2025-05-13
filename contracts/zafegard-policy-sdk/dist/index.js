@@ -36,6 +36,5 @@ export class Client extends ContractClient {
         add_wallet: (this.txFromJSON),
         remove_wallet: (this.txFromJSON),
         update_wallet: (this.txFromJSON),
-        policy__: (this.txFromJSON)
     };
 }

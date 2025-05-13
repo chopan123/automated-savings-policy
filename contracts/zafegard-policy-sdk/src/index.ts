@@ -18,13 +18,20 @@ if (typeof window !== 'undefined') {
 }
 
 export type SignerKey = { tag: "Policy", values: readonly [string] } | { tag: "Ed25519", values: readonly [Buffer] } | { tag: "Secp256r1", values: readonly [Buffer] };
+
 export type StorageKey = { tag: "Admin", values: void } | { tag: "Previous", values: readonly [Buffer] };
+
 export const Errors = {
   1: { message: "AlreadyInitialized" },
+
   2: { message: "NotInitialized" },
+
   3: { message: "NotFound" },
+
   4: { message: "NotAllowed" },
+
   5: { message: "TooSoon" },
+
   6: { message: "TooMuch" }
 }
 export type SignerExpiration = readonly [Option<u32>];
@@ -144,6 +151,5 @@ export class Client extends ContractClient {
     add_wallet: this.txFromJSON<null>,
     remove_wallet: this.txFromJSON<null>,
     update_wallet: this.txFromJSON<null>,
-    policy__: this.txFromJSON<null>
   }
 }

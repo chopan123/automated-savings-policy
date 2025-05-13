@@ -140,6 +140,5 @@ export declare class Client extends ContractClient {
         add_wallet: (json: string) => AssembledTransaction<null>;
         remove_wallet: (json: string) => AssembledTransaction<null>;
         update_wallet: (json: string) => AssembledTransaction<null>;
-        policy__: (json: string) => AssembledTransaction<null>;
     };
 }
