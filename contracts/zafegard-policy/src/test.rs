@@ -3,15 +3,10 @@
 use std::println;
 extern crate std;
 
-use smart_wallet::Contract as SmartWalletContract;
-use smart_wallet_interface::types::SignerKey;
+use smart_wallet::{Contract as SmartWalletContract};
+use smart_wallet_interface::types::{Signer, SignerExpiration, SignerKey, SignerLimits, SignerStorage};
 use soroban_sdk::{
-    auth::{Context, ContractContext},
-    symbol_short,
-    testutils::{Address as _, EnvTestConfig, Ledger as _},
-    vec,
-    xdr::ToXdr,
-    Address, BytesN, Env, Error as SorobanError, TryIntoVal,
+    auth::{Context, ContractContext}, symbol_short, testutils::{Address as _, BytesN as _, EnvTestConfig, Ledger as _}, vec, xdr::ToXdr, Address, BytesN, Env, Error as SorobanError, IntoVal, TryIntoVal
 };
 
 use crate::{Contract, ContractClient, Error};
@@ -28,10 +23,11 @@ fn test_add_and_use() {
 
     env.mock_all_auths();
 
-    let zafegard_address = env.register_contract(None, Contract);
+    let zafegard_address = env.register(Contract, ());
     let zafegard_client = ContractClient::new(&env, &zafegard_address);
 
-    let wallet = env.register_contract(None, SmartWalletContract);
+    let root_signer = Signer::Ed25519(BytesN::<32>::random(&env), SignerExpiration(None), SignerLimits(None), SignerStorage::Temporary);
+    let wallet = env.register(SmartWalletContract, (root_signer, ) );
     let sac = Address::generate(&env);
     let user = Address::generate(&env);
     let user_bytes = address_to_bytes(&env, &user);
@@ -80,10 +76,11 @@ fn test_add_and_remove() {
 
     env.mock_all_auths();
 
-    let zafegard_address = env.register_contract(None, Contract);
+    let zafegard_address = env.register(Contract, ());
     let zafegard_client = ContractClient::new(&env, &zafegard_address);
 
-    let wallet = env.register_contract(None, SmartWalletContract);
+    let root_signer = Signer::Ed25519(BytesN::<32>::random(&env), SignerExpiration(None), SignerLimits(None), SignerStorage::Temporary);
+    let wallet = env.register(SmartWalletContract, (root_signer, ));
     let sac = Address::generate(&env);
     let user = Address::generate(&env);
     let user_bytes = address_to_bytes(&env, &user);
