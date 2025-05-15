@@ -39,6 +39,13 @@ mod vault {
 }
 pub use vault::VaultClient;
 
+pub(crate) fn get_token_admin_client<'a>(
+    e: &Env,
+    address: &Address,
+) -> SorobanTokenAdminClient<'a> {
+    SorobanTokenAdminClient::new(e, address)
+}
+
 pub fn create_vault<'a>(
     e: &Env,
     assets: Vec<AssetStrategySet>,
@@ -65,7 +72,7 @@ pub fn create_vault<'a>(
 }
 
 // Create a vault with default settings and return all roles and asset address
-pub fn create_test_vault<'a>(e: &Env) -> (VaultClient<'a>, Address, Address, Address, Address, Address) {
+pub fn create_test_vault<'a>(e: &Env) -> (VaultClient<'a>, SorobanTokenClient<'a>, Address, Address, Address, Address) {
     // Create token for the vault
     let token_admin = Address::generate(e);
     let token = create_token_contract(e, &token_admin);
@@ -110,9 +117,14 @@ pub fn create_test_vault<'a>(e: &Env) -> (VaultClient<'a>, Address, Address, Add
         name_symbol,
         true, // upgradable
     );
+
+    let token_admin_client = get_token_admin_client(e, &token.address);
+    let amount = 10_0000000;
+    token_admin_client.mock_all_auths().mint(&manager, &amount);   
+    vault.mock_all_auths().deposit(&vec![&e, amount], &vec![&e, amount], &manager, &false);
     
-    // Return vault client and all the roles
-    (vault, token.address, emergency_manager, vault_fee_receiver, manager, rebalance_manager)
+    // Return vault client, token client and all the roles
+    (vault, token, emergency_manager, vault_fee_receiver, manager, rebalance_manager)
 }
 
 
@@ -123,6 +135,17 @@ pub(crate) fn create_token_contract<'a>(e: &Env, admin: &Address) -> SorobanToke
         &e.register_stellar_asset_contract_v2(admin.clone())
             .address(),
     )
+}
+
+#[test]
+fn save_money_success() {
+    let mut env = Env::default();
+    env.set_config(EnvTestConfig {
+        capture_snapshot_at_drop: false,
+    });
+
+    let (vault, token, emergency_manager, vault_fee_receiver, manager, rebalance_manager) = create_test_vault(&env);
+    
 }
 
 
