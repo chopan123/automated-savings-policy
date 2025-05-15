@@ -146,6 +146,7 @@ fn save_money_success() {
         capture_snapshot_at_drop: false,
     });
 
+    env.ledger().set_min_persistent_entry_ttl(u32::MAX / 2);
     env.mock_all_auths();
     env.ledger().set_sequence_number(2*MONTH_IN_LEDGERS);
 
@@ -167,7 +168,7 @@ fn save_money_success() {
     let contexts = vec![
         &env,
         Context::Contract(ContractContext {
-            contract: vault.address,
+            contract: vault.address.clone(),
             fn_name: symbol_short!("deposit"),
             args: vec![
                 &env,
@@ -186,23 +187,25 @@ fn save_money_success() {
 
     env.ledger().set_sequence_number(3*MONTH_IN_LEDGERS);
 
-    // Now we test that only can be deposited to vault address, so with any other address should fail
+    // Test that only can be deposited the amount allowed
     let contexts = vec![
         &env,
         Context::Contract(ContractContext {
-            contract: Address::generate(&env),
+            contract: vault.address.clone(),
             fn_name: symbol_short!("deposit"),
             args: vec![
                 &env,
-                vec![&env, amount].try_into_val(&env).unwrap(), // amounts
-                vec![&env, amount].try_into_val(&env).unwrap(), // min_amounts
+                vec![&env, amount+1].try_into_val(&env).unwrap(), // amounts
+                vec![&env, amount+1].try_into_val(&env).unwrap(), // min_amounts
                 user.to_val(),      // from
             ],
         }),
     ];
 
-    // let failed_deposit = automated_savings_client.try_policy__(&wallet, &SignerKey::Ed25519(user_bytes.clone()), &contexts);
-    // assert_eq!(failed_deposit, Err(Ok(SorobanError::from(Error::NotAllowed))));
+    let failed_deposit = automated_savings_client.try_policy__(&wallet, &SignerKey::Ed25519(user_bytes.clone()), &contexts);
+    assert_eq!(failed_deposit, Err(Ok(SorobanError::from(Error::TooMuch))));
+
+
 }
 
 

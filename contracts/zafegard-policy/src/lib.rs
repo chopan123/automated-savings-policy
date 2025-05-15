@@ -42,6 +42,8 @@ pub enum Error {
     NotAllowed = 4,
     TooSoon = 5,
     TooMuch = 6,
+    WrongVault = 7,
+    Debug = 8,
 }
 
 #[contract]
@@ -176,6 +178,22 @@ impl PolicyInterface for Contract {
                         .unwrap_or(env.ledger().sequence() - MONTH_IN_LEDGERS);
                     if env.ledger().sequence() - previous < MONTH_IN_LEDGERS {
                         panic_with_error!(&env, Error::TooSoon);
+                    }
+
+                    let allowed_amount = env.storage()
+                    .persistent()
+                    .get::<StorageKey, VaultAllowance>(&StorageKey::VaultAllowance(user.clone()))
+                    .unwrap_or_else(|| panic_with_error!(&env, Error::NotFound));
+                    if let Some(amount_val) = args.get(0) {
+                        if let Ok(arg_amount) = Vec::<i128>::try_from_val(&env, &amount_val) {
+                            if arg_amount.get(0).unwrap() > allowed_amount.amount {
+                                panic_with_error!(&env, Error::TooMuch);
+                            }
+                        } else {
+                            panic_with_error!(&env, Error::Debug);
+                        }
+                    } else {
+                        panic_with_error!(&env, Error::NotAllowed);
                     }
 
                     env.storage()
