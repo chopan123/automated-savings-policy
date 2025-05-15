@@ -17,6 +17,7 @@ testutils = []
 soroban-sdk = { workspace = true }
 smart-wallet = { workspace = true }
 smart-wallet-interface = { workspace = true }
+common = { path = "../../../../paltalabs/defindex/apps/contracts/common" }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }

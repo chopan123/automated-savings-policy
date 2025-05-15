@@ -248,6 +248,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1602,6 +1609,7 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 name = "zafegard-policy"
 version = "0.0.0"
 dependencies = [
+ "common",
  "smart-wallet",
  "smart-wallet-interface",
  "soroban-sdk",
