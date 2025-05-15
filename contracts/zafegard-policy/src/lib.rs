@@ -169,7 +169,7 @@ impl PolicyInterface for Contract {
 
         if contexts.len() == 1 {
             if let SignerKey::Ed25519(user) = signer {
-            if let Context::Contract(ContractContext { fn_name, args, .. }) = contexts.get_unchecked(0) {
+            if let Context::Contract(ContractContext { contract, fn_name, args, .. }) = contexts.get_unchecked(0) {
                 if fn_name == symbol_short!("deposit") {
                     let previous = env
                         .storage()
@@ -194,6 +194,10 @@ impl PolicyInterface for Contract {
                         }
                     } else {
                         panic_with_error!(&env, Error::NotAllowed);
+                    }
+
+                    if contract != allowed_amount.vault {
+                        panic_with_error!(&env, Error::WrongVault);
                     }
 
                     env.storage()

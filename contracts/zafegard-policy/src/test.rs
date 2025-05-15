@@ -165,6 +165,7 @@ fn save_money_success() {
     automated_savings_client.init(&wallet);
     automated_savings_client.add_wallet(&user_bytes, &vault.address, &amount);
 
+    // Success deposit
     let contexts = vec![
         &env,
         Context::Contract(ContractContext {
@@ -182,6 +183,7 @@ fn save_money_success() {
 
     automated_savings_client.policy__(&wallet, &SignerKey::Ed25519(user_bytes.clone()), &contexts);
 
+    // Test that can't deposit before the month
     let failed_deposit = automated_savings_client.try_policy__(&wallet, &SignerKey::Ed25519(user_bytes.clone()), &contexts);
     assert_eq!(failed_deposit, Err(Ok(SorobanError::from(Error::TooSoon))));
 
@@ -205,7 +207,23 @@ fn save_money_success() {
     let failed_deposit = automated_savings_client.try_policy__(&wallet, &SignerKey::Ed25519(user_bytes.clone()), &contexts);
     assert_eq!(failed_deposit, Err(Ok(SorobanError::from(Error::TooMuch))));
 
+    // Test that only can be deposited to the allowed vault
+    let contexts = vec![
+        &env,
+        Context::Contract(ContractContext {
+            contract: Address::generate(&env),
+            fn_name: symbol_short!("deposit"),
+            args: vec![
+                &env,
+                vec![&env, amount].try_into_val(&env).unwrap(), // amounts
+                vec![&env, amount].try_into_val(&env).unwrap(), // min_amounts
+                user.to_val(),      // from
+            ],
+        }),
+    ];
 
+    let failed_deposit = automated_savings_client.try_policy__(&wallet, &SignerKey::Ed25519(user_bytes.clone()), &contexts);
+    assert_eq!(failed_deposit, Err(Ok(SorobanError::from(Error::WrongVault))));
 }
 
 
