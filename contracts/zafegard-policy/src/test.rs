@@ -224,6 +224,24 @@ fn save_money_success() {
 
     let failed_deposit = automated_savings_client.try_policy__(&wallet, &SignerKey::Ed25519(user_bytes.clone()), &contexts);
     assert_eq!(failed_deposit, Err(Ok(SorobanError::from(Error::WrongVault))));
+
+    // Test that function name is correct
+    let contexts = vec![
+        &env,
+        Context::Contract(ContractContext {
+            contract: vault.address.clone(),
+            fn_name: symbol_short!("withdraw"),
+            args: vec![
+                &env,
+                vec![&env, amount].try_into_val(&env).unwrap(), // amounts
+                vec![&env, amount].try_into_val(&env).unwrap(), // min_amounts
+                user.to_val(),      // from
+            ],
+        }),
+    ];
+
+    let failed_deposit = automated_savings_client.try_policy__(&wallet, &SignerKey::Ed25519(user_bytes.clone()), &contexts);
+    assert_eq!(failed_deposit, Err(Ok(SorobanError::from(Error::NotAllowed))));
 }
 
 

@@ -43,7 +43,8 @@ pub enum Error {
     TooSoon = 5,
     TooMuch = 6,
     WrongVault = 7,
-    Debug = 8,
+    WrongContract = 8,
+    UnexpectedError = 9,
 }
 
 #[contract]
@@ -190,7 +191,7 @@ impl PolicyInterface for Contract {
                                 panic_with_error!(&env, Error::TooMuch);
                             }
                         } else {
-                            panic_with_error!(&env, Error::Debug);
+                            panic_with_error!(&env, Error::UnexpectedError);
                         }
                     } else {
                         panic_with_error!(&env, Error::NotAllowed);
